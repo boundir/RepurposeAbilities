@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>6c9880bb-4589-4511-b0fa-21c757f5db02</Guid>
+    <Name>RepurposeAbilities</Name>
+    <Description>This mod allows you to attach and/or remove abilities to characters, weapons, armors and items.
+tags= War of the Chosen, Gameplay, Config</Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName>RepurposeAbilities</AssemblyName>
+    <RootNamespace>RepurposeAbilities</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Config\" />
+    <Folder Include="Localization\" />
+    <Folder Include="Src\" />
+    <Folder Include="Src\RepurposeAbilities\" />
+    <Folder Include="Src\RepurposeAbilities\Classes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Config\XComRepurposeAbilities.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="ReadMe.txt" />
+    <Content Include="ModPreview.jpg" />
+    <Content Include="Config\XComEditor.ini" />
+    <Content Include="Config\XComEngine.ini" />
+    <Content Include="Config\XComGame.ini" />
+    <Content Include="Localization\XComGame.int" />
+    <Content Include="Src\RepurposeAbilities\Classes\OPTC_CharactersAbilities.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\RepurposeAbilities\Classes\X2DownloadableContentInfo_RepurposeAbilities.uc" />
+  </ItemGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+</Project>
