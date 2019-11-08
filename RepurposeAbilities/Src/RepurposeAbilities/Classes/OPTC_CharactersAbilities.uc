@@ -1,145 +1,126 @@
 class OPTC_CharactersAbilities extends X2DownloadableContentInfo config(RepurposeAbilities);
 
-struct native CharacterAbilitiesNames
+`define REP_Log(msg) `Log(`msg,, 'Repurpose Abilities')
+
+struct native TemplateAbilitiesNames
 {
 	var Name TemplateName;
+	var Name CharacterGroup;
 	var bool RemoveOriginal;
 	var array<Name> AddAbilityName;
 	var array<Name> RemoveAbilityName;
 };
 
-var config array<CharacterAbilitiesNames> Abilities;
+var config array<TemplateAbilitiesNames> Abilities;
 
 static event OnPostTemplatesCreated()
 {
+	`REP_Log("Repurpose Abilities loaded");
+
+	PatchCharacterTemplates();
+	PatchItemTemplates();
+}
+
+static function PatchCharacterTemplates()
+{
 	local X2CharacterTemplateManager CharacterMgr;
-	local X2ItemTemplateManager ItemMgr;
-	local array<X2DataTemplate> TemplateAllDifficulties;
-	local X2DataTemplate Template;
-
 	local X2CharacterTemplate CharacterTemplate;
-	local X2WeaponTemplate WeaponTemplate;
-	local X2ArmorTemplate ArmorTemplate;
-	local X2EquipmentTemplate ItemTemplate;
-	
-	local CharacterAbilitiesNames CharacterConfig;
-	local Name AbilityName;
-
-	`LOG("Repurpose Abilities loaded");
+	local array<X2DataTemplate> TemplateAllDifficulties;
+	local int ScanTemplates, ScanGroup, ScanCharacter;
+	local array<name> AllTemplateNames;
+	local name TemplateName;
 
 	CharacterMgr = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
-	ItemMgr = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+	
+	CharacterMgr.GetTemplateNames(AllTemplateNames);
 
-	foreach default.Abilities(CharacterConfig)
+	foreach AllTemplateNames(TemplateName)
 	{
-		// Character Abilities
-		CharacterMgr.FindDataTemplateAllDifficulties(CharacterConfig.TemplateName, TemplateAllDifficulties);
+		CharacterMgr.FindDataTemplateAllDifficulties(TemplateName, TemplateAllDifficulties);
 
-		foreach TemplateAllDifficulties(Template)
+		for ( ScanTemplates = 0; ScanTemplates < TemplateAllDifficulties.Length; ++ScanTemplates )
 		{
-			CharacterTemplate = X2CharacterTemplate(Template);
-
+			CharacterTemplate = X2CharacterTemplate(TemplateAllDifficulties[ScanTemplates]);
 			if (CharacterTemplate != none)
 			{
-				if(CharacterConfig.RemoveOriginal)
+				ScanGroup = default.Abilities.Find('CharacterGroup', CharacterTemplate.CharacterGroupName);
+				if (ScanGroup != INDEX_NONE)
 				{
-					CharacterTemplate.Abilities.length = 0;
-					`LOG("Repurpose Abilities : Removed previous abilities from" @ CharacterConfig.TemplateName);
+					ModifyCharaterTemplate(CharacterTemplate, default.Abilities[ScanGroup]);
 				}
 
-				foreach CharacterConfig.AddAbilityName(AbilityName)
+				ScanCharacter = default.Abilities.Find('TemplateName', CharacterTemplate.DataName);
+				if (ScanCharacter != INDEX_NONE)
 				{
-					CharacterTemplate.Abilities.AddItem(AbilityName);
-					`LOG("Repurpose Abilities : Added" @ AbilityName @ "to CharacterTemplate" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.RemoveAbilityName(AbilityName)
-				{
-					CharacterTemplate.Abilities.RemoveItem(AbilityName);
-					`LOG("Repurpose Abilities : Removed" @ AbilityName @ "from CharacterTemplate" @ CharacterConfig.TemplateName);
+					ModifyCharaterTemplate(CharacterTemplate, default.Abilities[ScanCharacter]);
 				}
 			}
 		}
-
-		ItemMgr.FindDataTemplateAllDifficulties(CharacterConfig.TemplateName, TemplateAllDifficulties);
-
-		foreach TemplateAllDifficulties(Template)
-		{
-			
-			/* !! WeaponsTemplate and ArmorTemplate are EquipmentTemplate !!
-			// Weapon Abilities
-			WeaponTemplate = X2WeaponTemplate(Template);
-
-			if (WeaponTemplate != none)
-			{
-				if(CharacterConfig.RemoveOriginal)
-				{
-					WeaponTemplate.Abilities.length = 0;
-					`LOG("Repurpose Abilities : Removed previous abilities from" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.AddAbilityName(AbilityName)
-				{
-					WeaponTemplate.Abilities.AddItem(AbilityName);
-					`LOG("Repurpose Abilities : Added" @ AbilityName @ "to WeaponTemplate" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.RemoveAbilityName(AbilityName)
-				{
-					WeaponTemplate.Abilities.RemoveItem(AbilityName);
-					`LOG("Repurpose Abilities : Removed" @ AbilityName @ "from WeaponTemplate" @ CharacterConfig.TemplateName);
-				}
-			}
-
-			// Armor Abilities
-			ArmorTemplate = X2ArmorTemplate(Template);
-
-			if (ArmorTemplate != none)
-			{
-				if(CharacterConfig.RemoveOriginal)
-				{
-					ArmorTemplate.Abilities.length = 0;
-					`LOG("Repurpose Abilities : Removed previous abilities from" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.AddAbilityName(AbilityName)
-				{
-					ArmorTemplate.Abilities.AddItem(AbilityName);
-					`LOG("Repurpose Abilities : Added" @ AbilityName @ "to ArmorTemplate" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.RemoveAbilityName(AbilityName)
-				{
-					ArmorTemplate.Abilities.RemoveItem(AbilityName);
-					`LOG("Repurpose Abilities : Removed" @ AbilityName @ "from ArmorTemplate" @ CharacterConfig.TemplateName);
-				}
-			}
-			*/
-			// Equipment Abilities
-			ItemTemplate = X2EquipmentTemplate(Template);
-
-			if (ItemTemplate != none)
-			{
-				if(CharacterConfig.RemoveOriginal)
-				{
-					ItemTemplate.Abilities.length = 0;
-					`LOG("Repurpose Abilities : Removed previous abilities from" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.AddAbilityName(AbilityName)
-				{
-					ItemTemplate.Abilities.AddItem(AbilityName);
-					`LOG("Repurpose Abilities : Added" @ AbilityName @ "to EquipmentTemplate" @ CharacterConfig.TemplateName);
-				}
-
-				foreach CharacterConfig.RemoveAbilityName(AbilityName)
-				{
-					ItemTemplate.Abilities.RemoveItem(AbilityName);
-					`LOG("Repurpose Abilities : Removed" @ AbilityName @ "from EquipmentTemplate" @ CharacterConfig.TemplateName);
-				}
-			}
-		}
-
 	}
 }
 
+static function PatchItemTemplates()
+{
+	local X2ItemTemplateManager ItemMgr;
+	local array<X2DataTemplate> TemplateAllDifficulties;
+	local X2DataTemplate Template;
+	local X2EquipmentTemplate EquipmentTemplate;
+	local TemplateAbilitiesNames TemplateConfig;
+	local Name AbilityName;
+
+	ItemMgr = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+
+	foreach default.Abilities(TemplateConfig)
+	{
+		ItemMgr.FindDataTemplateAllDifficulties(TemplateConfig.TemplateName, TemplateAllDifficulties);
+
+		foreach TemplateAllDifficulties(Template)
+		{
+			EquipmentTemplate = X2EquipmentTemplate(Template);
+
+			if (EquipmentTemplate != none)
+			{
+				if(TemplateConfig.RemoveOriginal)
+				{
+					EquipmentTemplate.Abilities.length = 0;
+					`REP_Log("Removed previous abilities from" @ EquipmentTemplate.DataName);
+				}
+
+				foreach TemplateConfig.AddAbilityName(AbilityName)
+				{
+					EquipmentTemplate.Abilities.AddItem(AbilityName);
+					`REP_Log("Added" @ AbilityName @ "to" @ EquipmentTemplate.DataName);
+				}
+
+				foreach TemplateConfig.RemoveAbilityName(AbilityName)
+				{
+					EquipmentTemplate.Abilities.RemoveItem(AbilityName);
+					`REP_Log("Removed" @ AbilityName @ "from" @ EquipmentTemplate.DataName);
+				}
+			}
+		}
+	}
+}
+
+static function ModifyCharaterTemplate(X2CharacterTemplate CharacterTemplate, TemplateAbilitiesNames TemplateConfig)
+{
+	local Name AbilityName;
+
+	if(TemplateConfig.RemoveOriginal)
+	{
+		CharacterTemplate.Abilities.length = 0;
+		`REP_Log("Removed previous abilities from" @ CharacterTemplate.DataName);
+	}
+
+	foreach TemplateConfig.AddAbilityName(AbilityName)
+	{
+		CharacterTemplate.Abilities.AddItem(AbilityName);
+		`REP_Log("Added" @ AbilityName @ "to" @ CharacterTemplate.DataName);
+	}
+
+	foreach TemplateConfig.RemoveAbilityName(AbilityName)
+	{
+		CharacterTemplate.Abilities.RemoveItem(AbilityName);
+		`REP_Log("Removed" @ AbilityName @ "from" @ CharacterTemplate.DataName);
+	}
+}

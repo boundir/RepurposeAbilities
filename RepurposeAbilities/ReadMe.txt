@@ -5,7 +5,10 @@ This mod allows you to attach and/or remove abilities to characters, weapons, ar
 [h1]Variables[/h1]
 
 [u]TemplateName[/u] - [i]String[/i]
-[b]Required[/b] - Name of the template being modified
+[b]Optional[/b] - Name of the template being modified.
+
+[u]CharacterGroup[/u] - [i]String[/i]
+[b]Optional[/b] - Name of the CharacterGroup being modified.
 
 [u]RemoveOriginal[/u] - [i]Bool[/i]
 [b]Optional[/b] - Whether we remove original abilities or not.
@@ -24,6 +27,8 @@ Can be used by anyone willing to tweak his game even more.
 [u]Examples:[/u]
 [code]
 [RepurposeAbilities.OPTC_CharactersAbilities]
+; Remove Lost Headshot from all Lost
+; +Abilities=(CharacterGroup=TheLost, RemoveAbilityName=(LostHeadshotInit))
 
 ; Ability attached to character
 ; Remove original abilities from Andromedon
