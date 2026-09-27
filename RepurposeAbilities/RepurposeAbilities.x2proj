@@ -9,27 +9,22 @@ tags= War of the Chosen, Gameplay, Config</Description>
     <AssemblyName>RepurposeAbilities</AssemblyName>
     <RootNamespace>RepurposeAbilities</RootNamespace>
   </PropertyGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
   <ItemGroup>
-    <Folder Include="Config\" />
-    <Folder Include="Localization\" />
-    <Folder Include="Src\" />
-    <Folder Include="Src\RepurposeAbilities\" />
-    <Folder Include="Src\RepurposeAbilities\Classes\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Config\XComRepurposeAbilities.ini">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="ReadMe.txt" />
+    <Folder Include="Config" />
+    <Folder Include="Config\2.0" />
+    <Folder Include="Src" />
+    <Folder Include="Src\RepurposeAbilities" />
+    <Folder Include="Src\RepurposeAbilities\Classes" />
     <Content Include="ModPreview.jpg" />
+    <Content Include="PublishedFileId.ID" />
+    <Content Include="ReadMe.txt" />
     <Content Include="Config\XComEditor.ini" />
     <Content Include="Config\XComEngine.ini" />
     <Content Include="Config\XComGame.ini" />
-    <Content Include="Localization\XComGame.int" />
-    <Content Include="Src\RepurposeAbilities\Classes\OPTC_CharactersAbilities.uc">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="Src\RepurposeAbilities\Classes\X2DownloadableContentInfo_RepurposeAbilities.uc" />
+    <Content Include="Config\XComRepurposeAbilities.ini" />
+    <Content Include="Config\2.0\XComRepurposeAbilities.ini" />
+    <Content Include="Src\RepurposeAbilities\Classes\OPTC_CharactersAbilities.uc" />
+    <Content Include="Src\RepurposeAbilities\Classes\X2DLCInfo_RepurposeAbilities.uc" />
   </ItemGroup>
-  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>
