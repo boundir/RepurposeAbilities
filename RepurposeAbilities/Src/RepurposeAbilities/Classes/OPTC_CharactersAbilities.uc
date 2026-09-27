@@ -44,13 +44,13 @@ static function PatchCharacterTemplates()
 			if (CharacterTemplate != none)
 			{
 				ScanGroup = default.Abilities.Find('CharacterGroup', CharacterTemplate.CharacterGroupName);
-				if (ScanGroup != INDEX_NONE)
+				if (ScanGroup != INDEX_NONE && default.Abilities[ScanGroup].CharacterGroup != '')
 				{
 					ModifyCharaterTemplate(CharacterTemplate, default.Abilities[ScanGroup]);
 				}
 
 				ScanCharacter = default.Abilities.Find('TemplateName', CharacterTemplate.DataName);
-				if (ScanCharacter != INDEX_NONE)
+				if (ScanCharacter != INDEX_NONE && default.Abilities[ScanCharacter].TemplateName != '')
 				{
 					ModifyCharaterTemplate(CharacterTemplate, default.Abilities[ScanCharacter]);
 				}
