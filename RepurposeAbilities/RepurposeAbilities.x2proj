@@ -9,7 +9,12 @@ tags= War of the Chosen, Gameplay, Config</Description>
     <AssemblyName>RepurposeAbilities</AssemblyName>
     <RootNamespace>RepurposeAbilities</RootNamespace>
   </PropertyGroup>
-  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+  <PropertyGroup>
+    <SolutionRoot>$(MSBuildProjectDirectory)\..\</SolutionRoot>
+    <ScriptsDir>$(SolutionRoot).scripts\</ScriptsDir>
+    <BuildCommonRoot>$(ScriptsDir)X2ModBuildCommon\</BuildCommonRoot>
+  </PropertyGroup>
+  <Import Project="$(BuildCommonRoot)XCOM2.targets" />
   <ItemGroup>
     <Folder Include="Config" />
     <Folder Include="Src" />
