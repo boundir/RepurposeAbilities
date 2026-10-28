@@ -1,265 +1,409 @@
-class X2DLCInfo_RepurposeAbilities extends X2DownloadableContentInfo;
+class X2DLCInfo_RepurposeAbilities extends X2DownloadableContentInfo
+	dependson(OPTC_CharactersAbilities)
+	config(RepurposeAbilities);
 
-struct AbilityAttachment
+`define REP_Log(msg) `Log(`msg, default.EnableDebug, 'RepurposeAbilities')
+`define REP_Warn(msg) `Log(`msg,, 'RepurposeAbilities')
+
+enum ERepurposeOperation
+{
+	eRepurpose_Add,
+	eRepurpose_Remove,
+	eRepurpose_Clear
+};
+
+struct AbilityTargets
 {
 	var array<name> Characters;
+	var array<name> CharacterGroups;
 	var array<name> Equipments;
+	var array<name> WeaponCategories;
+	var array<name> ItemCategories;
+	var array<name> ArmorClasses;
+	var array<name> ArmorCategories;
 	var array<name> Abilities;
 };
 
 struct AbilityLink
 {
 	var name AbilityName;
-	var array<AbilityAttachment> AddTo;
-	var array<AbilityAttachment> RemoveFrom;
+	var AbilityTargets AddTo;
+	var AbilityTargets RemoveFrom;
 };
 
-var config(RepurposeAbilities) array<AbilityLink> RepurposeAbility;
-var config(Engine) bool EnableTrace;
-var config(Engine) bool EnableDebug;
-
-delegate RepurposeAbilityDelegate(X2DataTemplate Template, name RepurposeAbilityName, bool ShouldLog);
-
-static private function X2DLCInfo_RepurposeAbilities GetClassDefaultObject()
-{
-	return X2DLCInfo_RepurposeAbilities(class'XComEngine'.static.GetClassDefaultObjectByName(default.Class.Name));
-}
-
-private function CallRepurposeAbilityFn(X2DataTemplate Template, name AbilityName, bool ShouldLog, delegate<RepurposeAbilityDelegate> RepurposeAbilityFn)
-{
-	RepurposeAbilityFn(Template, AbilityName, ShouldLog);
-}
+var config array<AbilityTargets> ClearAbilities;
+var config array<AbilityLink> RepurposeAbility;
+var config bool EnableDebug;
 
 static event OnPostTemplatesCreated()
 {
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
+	local array<AbilityTargets> Clears;
+	local array<AbilityLink> Links;
+	local AbilityTargets Targets;
+	local AbilityLink Link;
 
-	RepurposeAbilities();
-}
+	ConvertLegacyEntries(Clears, Links);
 
-static function RepurposeAbilities()
-{
-	local AbilityLink Ability;
-	local X2AbilityTemplateManager AbilityTemplateManager;
-	local X2AbilityTemplate AbilityTemplate;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	AbilityTemplateManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-
-	foreach default.RepurposeAbility(Ability)
+	foreach default.ClearAbilities(Targets)
 	{
-		AbilityTemplate = AbilityTemplateManager.FindAbilityTemplate(Ability.AbilityName);
+		Clears.AddItem(Targets);
+	}
 
-		if (AbilityTemplate == none)
-		{
-			`Log(Ability.AbilityName @ "does not exist. Skipping.", true, 'RepurposeAbilities');
+	foreach default.RepurposeAbility(Link)
+	{
+		Links.AddItem(Link);
+	}
 
-			continue;
-		}
+	foreach Clears(Targets)
+	{
+		ApplyToTargets(Targets, '', eRepurpose_Clear);
+	}
 
-		AddAbilities(Ability);
-		RemoveAbilities(Ability);
+	foreach Links(Link)
+	{
+		ApplyLink(Link);
 	}
 }
 
-static function AddAbilities(AbilityLink Ability)
+static function ConvertLegacyEntries(out array<AbilityTargets> Clears, out array<AbilityLink> Links)
 {
-	local AbilityAttachment Attachment;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	foreach Ability.AddTo(Attachment)
-	{
-		RepurposeCharacterAbilities(Attachment, Ability.AbilityName, AddAbility);
-		RepurposeItemAbilities(Attachment, Ability.AbilityName, AddAbility);
-		RepurposeAbilityAdditionalAbilities(Attachment, Ability.AbilityName, AddAbility);
-	}
-}
-
-static function RemoveAbilities(AbilityLink Ability)
-{
-	local AbilityAttachment Attachment;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	foreach Ability.RemoveFrom(Attachment)
-	{
-		RepurposeCharacterAbilities(Attachment, Ability.AbilityName, RemoveAbility);
-		RepurposeItemAbilities(Attachment, Ability.AbilityName, RemoveAbility);
-		RepurposeAbilityAdditionalAbilities(Attachment, Ability.AbilityName, RemoveAbility);
-	}
-}
-
-static function RepurposeCharacterAbilities(AbilityAttachment Attachment, name RepurposeAbilityName, delegate<RepurposeAbilityDelegate> RepurposeAbilityFn)
-{
-	local X2DLCInfo_RepurposeAbilities ClassObject;
-	local X2CharacterTemplateManager CharacterTemplateManager;
-	local array<X2DataTemplate> TemplateAllDifficulties;
-	local X2DataTemplate Template;
-	local X2CharacterTemplate CharacterTemplate;
-	local name CharacterName;
-	local bool ShouldLog;
-	local int Index;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	CharacterTemplateManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
-
-	foreach Attachment.Characters(CharacterName)
-	{
-		CharacterTemplateManager.FindDataTemplateAllDifficulties(CharacterName, TemplateAllDifficulties);
-
-		foreach TemplateAllDifficulties(Template, Index)
-		{
-			CharacterTemplate = X2CharacterTemplate(Template);
-
-			if (CharacterTemplate == none)
-			{
-				continue;
-			}
-
-			ShouldLog = false;
-
-			if (default.EnableDebug && Index == 0)
-			{
-				ShouldLog = true;
-			}
-
-			ClassObject = GetClassDefaultObject();
-			ClassObject.CallRepurposeAbilityFn(CharacterTemplate, RepurposeAbilityName, ShouldLog, RepurposeAbilityFn);
-		}
-	}
-}
-
-static function RepurposeItemAbilities(AbilityAttachment Attachment, name RepurposeAbilityName, delegate<RepurposeAbilityDelegate> RepurposeAbilityFn)
-{
-	local X2DLCInfo_RepurposeAbilities ClassObject;
-	local X2ItemTemplateManager ItemTemplateManager;
-	local array<X2DataTemplate> TemplateAllDifficulties;
-	local X2DataTemplate Template;
-	local X2EquipmentTemplate EquipmentTemplate;
-	local name ItemName;
-	local bool ShouldLog;
-	local int Index;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	ItemTemplateManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
-
-	foreach Attachment.Equipments(ItemName)
-	{
-		ItemTemplateManager.FindDataTemplateAllDifficulties(ItemName, TemplateAllDifficulties);
-		ShouldLog = false;
-
-		foreach TemplateAllDifficulties(Template, Index)
-		{
-			EquipmentTemplate = X2EquipmentTemplate(Template);
-
-			if (EquipmentTemplate == none)
-			{
-				continue;
-			}
-
-			ShouldLog = false;
-
-			if (default.EnableDebug && Index == 0)
-			{
-				ShouldLog = true;
-			}
-
-			ClassObject = GetClassDefaultObject();
-			ClassObject.CallRepurposeAbilityFn(EquipmentTemplate, RepurposeAbilityName, ShouldLog, RepurposeAbilityFn);
-		}
-	}
-}
-
-static function RepurposeAbilityAdditionalAbilities(AbilityAttachment Attachment, name RepurposeAbilityName, delegate<RepurposeAbilityDelegate> RepurposeAbilityFn)
-{
-	local X2DLCInfo_RepurposeAbilities ClassObject;
-	local X2AbilityTemplateManager AbilityTemplateManager;
-	local X2AbilityTemplate AbilityTemplate;
+	local X2CharacterTemplateManager CharacterManager;
+	local TemplateAbilitiesNames Entry;
+	local AbilityTargets Targets, EmptyTargets;
+	local AbilityLink Link, EmptyLink;
 	local name AbilityName;
 
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
+	CharacterManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
 
-	AbilityTemplateManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-
-	foreach Attachment.Abilities(AbilityName)
+	foreach class'OPTC_CharactersAbilities'.default.Abilities(Entry)
 	{
-		AbilityTemplate = AbilityTemplateManager.FindAbilityTemplate(AbilityName);
+		Targets = EmptyTargets;
 
-		if (AbilityTemplate == none)
+		if (Entry.CharacterGroup != '')
+		{
+			Targets.CharacterGroups.AddItem(Entry.CharacterGroup);
+		}
+
+		if (Entry.TemplateName != '')
+		{
+			if (CharacterManager.FindCharacterTemplate(Entry.TemplateName) != none)
+			{
+				Targets.Characters.AddItem(Entry.TemplateName);
+			}
+			else
+			{
+				Targets.Equipments.AddItem(Entry.TemplateName);
+			}
+		}
+
+		if (Targets.Characters.Length + Targets.CharacterGroups.Length + Targets.Equipments.Length == 0)
 		{
 			continue;
 		}
 
-		ClassObject = GetClassDefaultObject();
-		ClassObject.CallRepurposeAbilityFn(AbilityTemplate, RepurposeAbilityName, default.EnableDebug, RepurposeAbilityFn);
+		if (Entry.RemoveOriginal)
+		{
+			Clears.AddItem(Targets);
+		}
+
+		foreach Entry.AddAbilityName(AbilityName)
+		{
+			Link = EmptyLink;
+			Link.AbilityName = AbilityName;
+			Link.AddTo = Targets;
+			Links.AddItem(Link);
+		}
+
+		foreach Entry.RemoveAbilityName(AbilityName)
+		{
+			Link = EmptyLink;
+			Link.AbilityName = AbilityName;
+			Link.RemoveFrom = Targets;
+			Links.AddItem(Link);
+		}
 	}
 }
 
-static function AddAbility(X2DataTemplate Template, name AbilityName, bool ShouldLog = false)
+static function ApplyLink(AbilityLink Link)
+{
+	local X2AbilityTemplateManager AbilityManager;
+
+	if (Link.AbilityName == '')
+	{
+		return;
+	}
+
+	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+
+	if (AbilityManager.FindAbilityTemplate(Link.AbilityName) == none)
+	{
+		`REP_Warn("Ability" @ Link.AbilityName @ "does not exist. It can be removed but will not be added.");
+	}
+	else
+	{
+		ApplyToTargets(Link.AddTo, Link.AbilityName, eRepurpose_Add);
+	}
+
+	ApplyToTargets(Link.RemoveFrom, Link.AbilityName, eRepurpose_Remove);
+}
+
+static function ApplyToTargets(AbilityTargets Targets, name AbilityName, ERepurposeOperation Operation)
+{
+	local array<X2DataTemplate> Templates;
+	local X2DataTemplate Template;
+
+	Templates = ResolveTargets(Targets);
+
+	foreach Templates(Template)
+	{
+		ApplyToTemplate(Template, AbilityName, Operation);
+	}
+}
+
+static function array<X2DataTemplate> ResolveTargets(AbilityTargets Targets)
+{
+	local X2CharacterTemplateManager CharacterManager;
+	local X2ItemTemplateManager ItemManager;
+	local X2AbilityTemplateManager AbilityManager;
+	local array<X2DataTemplate> Resolved, Variants;
+	local X2DataTemplate Template;
+	local X2CharacterTemplate CharacterTemplate;
+	local X2AbilityTemplate AbilityTemplate;
+	local array<name> AllNames, MatchedFilters;
+	local name TargetName, TemplateName;
+
+	CharacterManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
+	ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+
+	foreach Targets.Characters(TargetName)
+	{
+		Variants.Length = 0;
+		CharacterManager.FindDataTemplateAllDifficulties(TargetName, Variants);
+		AppendTemplates(Resolved, Variants, TargetName);
+	}
+
+	if (Targets.CharacterGroups.Length > 0)
+	{
+		AllNames.Length = 0;
+		CharacterManager.GetTemplateNames(AllNames);
+
+		foreach AllNames(TemplateName)
+		{
+			Variants.Length = 0;
+			CharacterManager.FindDataTemplateAllDifficulties(TemplateName, Variants);
+
+			foreach Variants(Template)
+			{
+				CharacterTemplate = X2CharacterTemplate(Template);
+
+				if (CharacterTemplate != none && NoteMatch(CharacterTemplate.CharacterGroupName, Targets.CharacterGroups, MatchedFilters))
+				{
+					AddUnique(Resolved, CharacterTemplate);
+				}
+			}
+		}
+
+		WarnUnmatched(Targets.CharacterGroups, MatchedFilters, "character group");
+	}
+
+	foreach Targets.Equipments(TargetName)
+	{
+		Variants.Length = 0;
+		ItemManager.FindDataTemplateAllDifficulties(TargetName, Variants);
+		AppendTemplates(Resolved, Variants, TargetName);
+	}
+
+	if (Targets.WeaponCategories.Length + Targets.ItemCategories.Length + Targets.ArmorClasses.Length + Targets.ArmorCategories.Length > 0)
+	{
+		AllNames.Length = 0;
+		MatchedFilters.Length = 0;
+		ItemManager.GetTemplateNames(AllNames);
+
+		foreach AllNames(TemplateName)
+		{
+			Variants.Length = 0;
+			ItemManager.FindDataTemplateAllDifficulties(TemplateName, Variants);
+
+			foreach Variants(Template)
+			{
+				if (MatchesItemFilters(Template, Targets, MatchedFilters))
+				{
+					AddUnique(Resolved, Template);
+				}
+			}
+		}
+
+		WarnUnmatched(Targets.WeaponCategories, MatchedFilters, "weapon category");
+		WarnUnmatched(Targets.ItemCategories, MatchedFilters, "item category");
+		WarnUnmatched(Targets.ArmorClasses, MatchedFilters, "armor class");
+		WarnUnmatched(Targets.ArmorCategories, MatchedFilters, "armor category");
+	}
+
+	foreach Targets.Abilities(TargetName)
+	{
+		AbilityTemplate = AbilityManager.FindAbilityTemplate(TargetName);
+
+		if (AbilityTemplate == none)
+		{
+			`REP_Warn("No ability named" @ TargetName @ "was found");
+			continue;
+		}
+
+		AddUnique(Resolved, AbilityTemplate);
+	}
+
+	return Resolved;
+}
+
+static function bool MatchesItemFilters(X2DataTemplate Template, AbilityTargets Targets, out array<name> MatchedFilters)
+{
+	local X2EquipmentTemplate EquipmentTemplate;
+	local X2WeaponTemplate WeaponTemplate;
+	local X2ArmorTemplate ArmorTemplate;
+	local bool IsMatch;
+
+	EquipmentTemplate = X2EquipmentTemplate(Template);
+
+	if (EquipmentTemplate == none)
+	{
+		return false;
+	}
+
+	IsMatch = NoteMatch(EquipmentTemplate.ItemCat, Targets.ItemCategories, MatchedFilters);
+
+	WeaponTemplate = X2WeaponTemplate(Template);
+
+	if (WeaponTemplate != none)
+	{
+		IsMatch = NoteMatch(WeaponTemplate.WeaponCat, Targets.WeaponCategories, MatchedFilters) || IsMatch;
+	}
+
+	ArmorTemplate = X2ArmorTemplate(Template);
+
+	if (ArmorTemplate != none)
+	{
+		IsMatch = NoteMatch(ArmorTemplate.ArmorClass, Targets.ArmorClasses, MatchedFilters) || IsMatch;
+		IsMatch = NoteMatch(ArmorTemplate.ArmorCat, Targets.ArmorCategories, MatchedFilters) || IsMatch;
+	}
+
+	return IsMatch;
+}
+
+static function bool NoteMatch(name Value, array<name> Wanted, out array<name> Matched)
+{
+	if (Value == '' || Wanted.Find(Value) == INDEX_NONE)
+	{
+		return false;
+	}
+
+	if (Matched.Find(Value) == INDEX_NONE)
+	{
+		Matched.AddItem(Value);
+	}
+
+	return true;
+}
+
+static function WarnUnmatched(array<name> Wanted, array<name> Matched, string Kind)
+{
+	local name Value;
+
+	foreach Wanted(Value)
+	{
+		if (Matched.Find(Value) == INDEX_NONE)
+		{
+			`REP_Warn("No template matches the" @ Kind @ Value);
+		}
+	}
+}
+
+static function AppendTemplates(out array<X2DataTemplate> Resolved, array<X2DataTemplate> Variants, name TargetName)
+{
+	local X2DataTemplate Template;
+
+	if (Variants.Length == 0)
+	{
+		`REP_Warn("No template named" @ TargetName @ "was found");
+		return;
+	}
+
+	foreach Variants(Template)
+	{
+		AddUnique(Resolved, Template);
+	}
+}
+
+static function AddUnique(out array<X2DataTemplate> Resolved, X2DataTemplate Template)
+{
+	if (Resolved.Find(Template) == INDEX_NONE)
+	{
+		Resolved.AddItem(Template);
+	}
+}
+
+static function ApplyToTemplate(X2DataTemplate Template, name AbilityName, ERepurposeOperation Operation)
 {
 	local X2CharacterTemplate CharacterTemplate;
 	local X2EquipmentTemplate EquipmentTemplate;
 	local X2AbilityTemplate AbilityTemplate;
 
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
 	CharacterTemplate = X2CharacterTemplate(Template);
 
 	if (CharacterTemplate != none)
 	{
-		CharacterTemplate.Abilities.AddItem(AbilityName);
+		EditAbilityList(CharacterTemplate.Abilities, Template.DataName, AbilityName, Operation);
+		return;
 	}
 
 	EquipmentTemplate = X2EquipmentTemplate(Template);
 
 	if (EquipmentTemplate != none)
 	{
-		EquipmentTemplate.Abilities.AddItem(AbilityName);
+		EditAbilityList(EquipmentTemplate.Abilities, Template.DataName, AbilityName, Operation);
+		return;
 	}
 
 	AbilityTemplate = X2AbilityTemplate(Template);
 
 	if (AbilityTemplate != none)
 	{
-		AbilityTemplate.AdditionalAbilities.AddItem(AbilityName);
+		EditAbilityList(AbilityTemplate.AdditionalAbilities, Template.DataName, AbilityName, Operation);
+		return;
 	}
 
-	`Log(AbilityName @ "added to" @ Template.DataName, ShouldLog, 'RepurposeAbilities');
+	`REP_Warn(Template.DataName @ "is a" @ Template.Class.Name @ "and carries no ability list");
 }
 
-static function RemoveAbility(X2DataTemplate Template, name AbilityName, bool ShouldLog = false)
+static function EditAbilityList(out array<name> Abilities, name OwnerName, name AbilityName, ERepurposeOperation Operation)
 {
-	local X2CharacterTemplate CharacterTemplate;
-	local X2EquipmentTemplate EquipmentTemplate;
-	local X2AbilityTemplate AbilityTemplate;
-
-	`Log(`StaticLocation, default.EnableTrace, 'RepurposeAbilitiesTrace');
-
-	CharacterTemplate = X2CharacterTemplate(Template);
-
-	if (CharacterTemplate != none)
+	switch (Operation)
 	{
-		CharacterTemplate.Abilities.RemoveItem(AbilityName);
+		case eRepurpose_Add:
+			if (Abilities.Find(AbilityName) != INDEX_NONE)
+			{
+				`REP_Log(AbilityName @ "is already on" @ OwnerName);
+				return;
+			}
+
+			Abilities.AddItem(AbilityName);
+			`REP_Log("Added" @ AbilityName @ "to" @ OwnerName);
+			break;
+
+		case eRepurpose_Remove:
+			if (Abilities.Find(AbilityName) == INDEX_NONE)
+			{
+				`REP_Log(AbilityName @ "is not on" @ OwnerName);
+				return;
+			}
+
+			Abilities.RemoveItem(AbilityName);
+			`REP_Log("Removed" @ AbilityName @ "from" @ OwnerName);
+			break;
+
+		case eRepurpose_Clear:
+			Abilities.Length = 0;
+			`REP_Log("Cleared every ability from" @ OwnerName);
+			break;
 	}
-
-	EquipmentTemplate = X2EquipmentTemplate(Template);
-
-	if (EquipmentTemplate != none)
-	{
-		EquipmentTemplate.Abilities.RemoveItem(AbilityName);
-	}
-
-	AbilityTemplate = X2AbilityTemplate(Template);
-
-	if (AbilityTemplate != none)
-	{
-		AbilityTemplate.AdditionalAbilities.RemoveItem(AbilityName);
-	}
-
-	`Log(AbilityName @ "removed from" @ Template.DataName, ShouldLog, 'RepurposeAbilities');
 }
-

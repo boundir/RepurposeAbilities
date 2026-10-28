@@ -12,7 +12,6 @@ tags= War of the Chosen, Gameplay, Config</Description>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
   <ItemGroup>
     <Folder Include="Config" />
-    <Folder Include="Config\2.0" />
     <Folder Include="Src" />
     <Folder Include="Src\RepurposeAbilities" />
     <Folder Include="Src\RepurposeAbilities\Classes" />
@@ -23,7 +22,6 @@ tags= War of the Chosen, Gameplay, Config</Description>
     <Content Include="Config\XComEngine.ini" />
     <Content Include="Config\XComGame.ini" />
     <Content Include="Config\XComRepurposeAbilities.ini" />
-    <Content Include="Config\2.0\XComRepurposeAbilities.ini" />
     <Content Include="Src\RepurposeAbilities\Classes\OPTC_CharactersAbilities.uc" />
     <Content Include="Src\RepurposeAbilities\Classes\X2DLCInfo_RepurposeAbilities.uc" />
   </ItemGroup>
